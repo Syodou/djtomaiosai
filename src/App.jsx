@@ -1,113 +1,127 @@
-import { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import CrtOverlay from './components/CrtOverlay.jsx'
+import BackgroundNoise from './components/BackgroundNoise.jsx'
+import CrypticButton from './components/CrypticButton.jsx'
 
-const UPCOMING_ITEMS = [
-  {
-    tag: 'Drop 01 · Audio Packs',
-    title: 'AI Stems & Sample Packs',
-    description: 'Loops, baterías, vocales procesadas con IA y bajos listos para mezclar en vivo o en estudio.',
-  },
-  {
-    tag: 'Drop 02 · Synth & FX',
-    title: 'Presets & DJ Tools',
-    description: 'Bancos de sonidos exclusivos, efectos de transición y racks de masterización de alto impacto.',
-  },
-  {
-    tag: 'Drop 03 · Apparel',
-    title: 'Limited Merch & Vinyls',
-    description: 'Indumentaria oficial edición limitada y coleccionables físicos de DJ Tomaios AI.',
-  },
+const FRAGMENTED_TRACK_SLOGANS = [
+  '01 // AMEN_VIVISECTION_285BPM_[RAW_CLIP].WAV',
+  '02 // SUB_HARMONIC_LACERATION_0x0000007E',
+  '03 // VENETIAN_SNARE_CORRUPTION_DUMP_v9.FLAC',
+  '04 // GABBER_KICK_THERMAL_OVERLOAD_[+24dB]',
+  '05 // NULL_POINTER_NIHILISM // DEAD_CHANNEL',
 ]
 
 export default function App() {
-  const [email, setEmail] = useState('')
-  const [submitted, setSubmitted] = useState(false)
+  const [frameHex, setFrameHex] = useState('0x007E9A1C')
+  const [bufferLoad, setBufferLoad] = useState(98.4)
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (!email.trim()) return
-    setSubmitted(true)
-    setEmail('')
-  }
+  useEffect(() => {
+    const id = setInterval(() => {
+      const nextHex = Math.floor(Math.random() * 0xffffffff)
+        .toString(16)
+        .toUpperCase()
+        .padStart(8, '0')
+      setFrameHex(`0x${nextHex}`)
+      setBufferLoad(Number((94 + Math.random() * 5.9).toFixed(1)))
+    }, 460)
+    return () => clearInterval(id)
+  }, [])
 
   return (
-    <>
-      <div className="bg-glow" aria-hidden="true" />
-      <div className="page-wrapper">
-        <header className="site-header">
-          <a href="/" className="brand">
-            <span className="brand-disc" aria-hidden="true" />
-            <span>DJ TOMAIOS AI</span>
-          </a>
-          <div className="domain-pill">
-            <span className="status-dot" aria-hidden="true" />
-            <span>djtomaiosai.shop</span>
+    <div className="nt-viewport-shell w-screen h-screen overflow-hidden relative select-none bg-[#080808] text-[#e0e0e0]">
+      {/* CRT Scanlines, Vignette & Weathering Overlay */}
+      <CrtOverlay />
+
+      {/* Multi-Layered ASCII, Kanji, Wireframe & System Error Background */}
+      <BackgroundNoise />
+
+      {/* Central / Scattered Non-Interactive Brutalist Typography Installation */}
+      <main
+        className="pointer-events-none relative z-20 w-full h-full flex flex-col justify-between p-6 sm:p-10"
+        aria-label="NT DYWKSYCKS visual installation"
+      >
+        {/* Upper Irregular Telemetry Header Fragment */}
+        <header className="flex flex-wrap items-start justify-between gap-4 pt-4">
+          <div className="bg-[#050505]/90 border border-[#e0e0e0]/25 px-3 py-2 font-mono text-[10px] sm:text-xs tracking-[0.25em] uppercase">
+            <div className="text-[#d80027] font-bold flex items-center gap-2">
+              <span className="inline-block w-2 h-2 bg-[#d80027]" />
+              <span>NODE_ID :: NT_DYWKSYCKS // VOID_INSTALLATION</span>
+            </div>
+            <div className="text-[#e0e0e0]/70 mt-0.5">
+              MEM_OFFSET: {frameHex} // DSP_CLIP: {bufferLoad}%
+            </div>
+          </div>
+
+          <div className="hidden sm:block bg-[#050505]/90 border border-[#39ff14]/40 px-3 py-1.5 font-mono text-[10px] text-[#39ff14] tracking-[0.3em] uppercase">
+            [NO_PORTFOLIO // NO_COMMERCE // PURE_SIGNAL_DECAY]
           </div>
         </header>
 
-        <main className="hero">
-          <div className="eq-bars" aria-hidden="true">
-            <span className="eq-bar" />
-            <span className="eq-bar" />
-            <span className="eq-bar" />
-            <span className="eq-bar" />
-            <span className="eq-bar" />
-            <span className="eq-bar" />
+        {/* Center Harsh Typographic Monolith & Scattered Slogans */}
+        <section className="my-auto flex flex-col items-center justify-center relative">
+          {/* Irregular Brutalist Framing Box */}
+          <div className="monolith-frame relative bg-[#050505]/88 border-2 border-[#e0e0e0] px-5 py-6 sm:px-10 sm:py-8 max-w-4xl w-full">
+            {/* Corner Technical Markers */}
+            <div className="flex items-center justify-between text-[10px] font-mono tracking-[0.3em] text-[#d80027] border-b border-[#e0e0e0]/25 pb-2 mb-4">
+              <span>FATAL_AUDIO_EXCEPTION // 0x0000007E</span>
+              <span className="text-[#39ff14]">[240-320 BPM // HARDCORE_NOISE]</span>
+            </div>
+
+            {/* Glitching Main Title */}
+            <h1
+              className="nt-glitch-title font-pixel uppercase text-[#e0e0e0] tracking-[0.16em] sm:tracking-[0.22em] leading-[0.92] select-none"
+              data-text="NT DYWKSYCKS"
+            >
+              NT DYWKSYCKS
+            </h1>
+
+            {/* Harsh Sub-Slogan Bar */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 bg-[#d80027] text-[#050505] px-2.5 py-1 font-mono text-xs sm:text-sm font-bold tracking-[0.28em] uppercase">
+              <span>CYBER-NIHILISM // EXTREME DIGITAL DECAY</span>
+              <span className="bg-[#050505] text-[#39ff14] px-1.5 py-0.5 text-[10px]">
+                信号喪失 // 0xDEAD
+              </span>
+            </div>
+
+            {/* Scattered Fragmented Breakcore Track Phrases */}
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-1.5 font-mono text-[10px] sm:text-[11px] tracking-[0.18em] text-[#e0e0e0]/75">
+              {FRAGMENTED_TRACK_SLOGANS.map((line, index) => (
+                <div
+                  key={line}
+                  className={`truncate px-2 py-1 border ${
+                    index % 2 === 0
+                      ? 'border-[#e0e0e0]/20 bg-[#080808]'
+                      : 'border-[#d80027]/35 bg-[#d80027]/5 text-[#e0e0e0]'
+                  }`}
+                >
+                  {line}
+                </div>
+              ))}
+              <div className="truncate px-2 py-1 border border-[#39ff14]/40 bg-[#39ff14]/10 text-[#39ff14] font-bold">
+                &gt;&gt; STATUS: [CORRUPTED AUDIO BUFFER]
+              </div>
+            </div>
+
+            {/* Asymmetric Floating Warning Stamp */}
+            <div className="hidden md:block absolute -right-4 -top-5 bg-[#e0e0e0] text-[#050505] border-2 border-[#d80027] px-2.5 py-1 font-mono text-[10px] font-bold tracking-[0.25em] uppercase rotate-2">
+              RAW_PCM_OVERDRIVE // +19.8dBFS
+            </div>
           </div>
+        </section>
 
-          <h1 className="hero-title">
-            El sonido del futuro llega a{' '}
-            <span className="gradient-text">DJ Tomaios AI Shop</span>
-          </h1>
-
-          <p className="hero-subtitle">
-            Estamos preparando la tienda oficial con librerías de sonidos generadas y curadas con IA,
-            herramientas para DJs/productores y merch exclusivo.
-          </p>
-
-          <section className="notify-card" aria-label="Registro de lanzamiento">
-            {submitted ? (
-              <p className="notify-success" role="status">
-                ¡Listo! Te avisaremos apenas abra la tienda oficial.
-              </p>
-            ) : (
-              <form className="notify-form" onSubmit={handleSubmit}>
-                <input
-                  type="email"
-                  className="notify-input"
-                  placeholder="Tu correo para acceso anticipado..."
-                  aria-label="Correo electrónico para acceso anticipado"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-                <button type="submit" className="notify-button">
-                  Notificarme
-                </button>
-              </form>
-            )}
-          </section>
-
-          <section className="preview-grid" aria-label="Adelanto del catálogo">
-            {UPCOMING_ITEMS.map((item) => (
-              <article key={item.title} className="preview-item">
-                <span className="preview-badge">{item.tag}</span>
-                <h2>{item.title}</h2>
-                <p>{item.description}</p>
-              </article>
-            ))}
-          </section>
-        </main>
-
-        <footer className="site-footer">
-          <span>© {new Date().getFullYear()} DJ Tomaios AI. Todos los derechos reservados.</span>
-          <nav className="footer-links" aria-label="Redes sociales">
-            <a href="#instagram" onClick={(e) => e.preventDefault()}>Instagram</a>
-            <a href="#soundcloud" onClick={(e) => e.preventDefault()}>SoundCloud</a>
-            <a href="#youtube" onClick={(e) => e.preventDefault()}>YouTube</a>
-          </nav>
+        {/* Bottom Irregular Diagnostic Readout */}
+        <footer className="pb-4 flex items-end justify-between font-mono text-[10px] tracking-[0.25em] text-[#e0e0e0]/45 uppercase">
+          <div>
+            SYS_KERNEL: NT_DYWKSYCKS_BUILD_777 // CRT_SYNC: 59.94Hz_INTERLACED
+          </div>
+          <div className="text-[#d80027]/80">
+            [DO_NOT_ADJUST_GAIN // PERMANENT_BUFFER_DAMAGE]
+          </div>
         </footer>
-      </div>
-    </>
+      </main>
+
+      {/* THE ONLY INTERACTIVE ELEMENT: The Trap / Exit Point */}
+      <CrypticButton />
+    </div>
   )
 }
-
