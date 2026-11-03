@@ -122,43 +122,42 @@ export default function BackgroundNoise() {
       {/* Layer 1: Pure CSS Orthogonal & Sub-Grid Wireframe */}
       <div className="wireframe-grid-bg absolute inset-0" />
 
-      {/* Layer 2: Pure DOM Wireframe Axis Traces & Target Reticles (Zero SVG / Zero Canvas) */}
-      <div className="absolute inset-0 opacity-35">
+      {/* Layer 2: Pure DOM Wireframe Axis Traces & Target Reticles (Zero Nested Alpha Group Surfaces) */}
+      <div className="absolute inset-0">
         {/* Horizontal & Vertical Brutalist Axis Slices */}
-        <div className="absolute inset-x-0 top-[15%] h-px bg-[#d80027]/60" />
-        <div className="absolute inset-x-0 bottom-[16%] h-px bg-[#39ff14]/50" />
-        <div className="absolute inset-y-0 left-[19%] w-px bg-[#e0e0e0]/20" />
-        <div className="absolute inset-y-0 right-[19%] w-px bg-[#e0e0e0]/20" />
+        <div className="absolute inset-x-0 top-[15%] h-px bg-[#d80027]/25" />
+        <div className="absolute inset-x-0 bottom-[16%] h-px bg-[#39ff14]/20" />
+        <div className="absolute inset-y-0 left-[19%] w-px bg-[#e0e0e0]/10" />
+        <div className="absolute inset-y-0 right-[19%] w-px bg-[#e0e0e0]/10" />
 
         {/* Pure DOM Top-Left Target Reticle */}
-        <div className="absolute top-[15%] left-[19%] -translate-x-1/2 -translate-y-1/2 w-20 h-20 border border-dashed border-[#d80027] flex items-center justify-center">
-          <div className="w-7 h-7 border border-[#e0e0e0]/70" />
-          <div className="absolute inset-x-[-14px] top-1/2 h-px bg-[#d80027]" />
-          <div className="absolute inset-y-[-14px] left-1/2 w-px bg-[#d80027]" />
+        <div className="absolute top-[15%] left-[19%] -translate-x-1/2 -translate-y-1/2 w-20 h-20 border border-dashed border-[#d80027]/40 flex items-center justify-center">
+          <div className="w-7 h-7 border border-[#e0e0e0]/30" />
+          <div className="absolute inset-x-[-14px] top-1/2 h-px bg-[#d80027]/40" />
+          <div className="absolute inset-y-[-14px] left-1/2 w-px bg-[#d80027]/40" />
         </div>
 
         {/* Pure DOM Bottom-Right Target Reticle */}
-        <div className="absolute bottom-[16%] right-[19%] translate-x-1/2 translate-y-1/2 w-16 h-16 border border-[#39ff14] flex items-center justify-center">
-          <div className="w-4 h-4 bg-[#39ff14]/20 border border-[#39ff14]" />
-          <div className="absolute inset-x-[-12px] top-1/2 h-px bg-[#39ff14]" />
-          <div className="absolute inset-y-[-12px] left-1/2 w-px bg-[#39ff14]" />
+        <div className="absolute bottom-[16%] right-[19%] translate-x-1/2 translate-y-1/2 w-16 h-16 border border-[#39ff14]/40 flex items-center justify-center">
+          <div className="w-4 h-4 bg-[#39ff14]/10 border border-[#39ff14]/40" />
+          <div className="absolute inset-x-[-12px] top-1/2 h-px bg-[#39ff14]/40" />
+          <div className="absolute inset-y-[-12px] left-1/2 w-px bg-[#39ff14]/40" />
         </div>
 
-        {/* Pure DOM GPU-Composited Breakcore PCM Clipping Waveform Strip */}
-        <div className="pcm-waveform-strip absolute inset-x-[8%] top-1/2 -translate-y-1/2 h-36 flex items-center justify-between gap-1 opacity-55">
+        {/* Pure DOM GPU-Composited Breakcore PCM Clipping Waveform Strip (Static Peak Height + Shared Compositor ScaleY) */}
+        <div className="pcm-waveform-strip absolute inset-x-[8%] top-1/2 -translate-y-1/2 h-36 flex items-center justify-between gap-1">
           {WAVEFORM_BARS.map((peak, idx) => (
             <div
               key={idx}
-              className={`pcm-bar flex-1 h-full ${
+              className={`pcm-bar flex-1 ${
                 idx % 3 === 0
-                  ? 'bg-[#d80027]'
+                  ? 'bg-[#d80027]/25 pcm-phase-a'
                   : idx % 5 === 0
-                    ? 'bg-[#39ff14]'
-                    : 'bg-[#e0e0e0]/50'
+                    ? 'bg-[#39ff14]/25 pcm-phase-b'
+                    : 'bg-[#e0e0e0]/15 pcm-phase-c'
               }`}
               style={{
-                '--bar-scale': peak,
-                '--bar-delay': `${(idx % 7) * -0.18}s`,
+                height: `${Math.round(peak * 100)}%`,
               }}
             />
           ))}
@@ -193,19 +192,21 @@ export default function BackgroundNoise() {
         {ASCII_BLOCKS[2]}
       </div>
 
-      {/* Pure CSS Flickering Hex Memory Dump Strip on Left Edge */}
+      {/* Pure CSS Flickering Hex Memory Dump Strip on Left Edge (Consolidated into 2 Compositor Banks) */}
       <div className="hidden sm:flex flex-col absolute top-1/3 left-3 font-mono text-[10px] leading-tight text-[#00f0ff]/35">
         <span className="text-[#d80027]/75 font-bold mb-1">
           [RAW_CORE_DUMP // 0x0000007E]
         </span>
-        {HEX_DUMP_ROWS.map((row, idx) => (
-          <span
-            key={row}
-            className={`tracking-wider ${idx % 2 === 0 ? 'hex-row-glitch-a' : 'hex-row-glitch-b'}`}
-          >
-            {row}
-          </span>
-        ))}
+        <div className="hex-row-glitch-a flex flex-col tracking-wider">
+          {HEX_DUMP_ROWS.slice(0, 4).map((row) => (
+            <span key={row}>{row}</span>
+          ))}
+        </div>
+        <div className="hex-row-glitch-b flex flex-col tracking-wider">
+          {HEX_DUMP_ROWS.slice(4).map((row) => (
+            <span key={row}>{row}</span>
+          ))}
+        </div>
       </div>
 
       {/* Layer 5: Raw System Error Fragments (Isolated Paint Containment) */}

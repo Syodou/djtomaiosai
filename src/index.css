@@ -58,7 +58,7 @@
 
 @layer components {
   /* ==========================================================================
-     GPU-ACCELERATED CRT OVERLAY (SCANLINES, DITHER GRAIN & CHROMATIC FRINGE)
+     GPU-ACCELERATED CRT OVERLAY (MICRO-TILED SCANLINES, DITHER & VIGNETTE)
      ========================================================================== */
 
   .crt-overlay-root {
@@ -67,68 +67,59 @@
     translate: 0 0 0;
   }
 
-  /* Pure CSS 2x2 Bayer Dither Grain (alpha-composited, zero full-screen blend readback) */
-  .crt-dither-grain {
+  /* Single Consolidated Static Surface:
+     1. Radial CRT Vignette (100% 100%)
+     2. Horizontal Scanlines (100% 4px hardware-repeated micro-tile)
+     3. RGB Phosphor Subpixel Grille (3px 100% hardware-repeated micro-tile)
+     4. 2x2 Bayer Dither Matrix (4px 4px hardware-repeated micro-tile) */
+  .crt-static-surface {
     contain: strict;
-    background: repeating-conic-gradient(
+    background-image:
+      radial-gradient(
+        circle at 50% 50% var(--in-oklab),
+        transparent 55%,
+        rgba(5, 5, 5, 0.56) 82%,
+        rgba(5, 5, 5, 0.95) 100%
+      ),
+      linear-gradient(
+        to bottom,
+        transparent 50%,
+        rgba(0, 0, 0, 0.56) 0
+      ),
+      linear-gradient(
+        to right,
+        rgba(216, 0, 39, 0.045) 33.33%,
+        rgba(57, 255, 20, 0.045) 0 66.66%,
+        rgba(0, 240, 255, 0.045) 0
+      ),
+      repeating-conic-gradient(
         rgba(224, 224, 224, 0.032) 0% 25%,
         transparent 0% 50%
-      )
-      0 / 4px 4px;
-  }
-
-  /* GPU-Composited Horizontal Scanlines & RGB Phosphor Subpixel Grille */
-  .crt-scanlines {
-    contain: strict;
-    background:
-      repeating-linear-gradient(
-        to bottom,
-        transparent 0px,
-        transparent 2px,
-        rgba(0, 0, 0, 0.56) 2px,
-        rgba(0, 0, 0, 0.56) 4px
-      ),
-      repeating-linear-gradient(
-        to right,
-        rgba(216, 0, 39, 0.045) 0px,
-        rgba(57, 255, 20, 0.045) 1px,
-        rgba(0, 240, 255, 0.045) 2px,
-        transparent 3px
       );
+    background-size:
+      100% 100%,
+      100% 4px,
+      3px 100%,
+      4px 4px;
+    background-repeat:
+      no-repeat,
+      repeat,
+      repeat,
+      repeat;
   }
 
-  /* GPU-Composited Chromatic Aberration Edge Fringe */
-  .crt-chromatic-fringe {
+  .crt-bezel-frame {
     contain: strict;
-    translate: 0 0 0;
     box-shadow:
-      inset 3px 0 0 rgba(216, 0, 39, 0.34),
-      inset -3px 0 0 rgba(0, 240, 255, 0.28),
+      inset 3px 0 0 rgba(216, 0, 39, 0.32),
+      inset -3px 0 0 rgba(0, 240, 255, 0.26),
       inset 0 2px 0 rgba(57, 255, 20, 0.16);
-    animation: chromatic-pulse 3.6s steps(2, end) infinite;
-    @media (prefers-reduced-motion: reduce) {
-      animation: none;
-    }
-  }
-
-  @keyframes chromatic-pulse {
-    0%, 86%, 100% {
-      opacity: 0.72;
-      translate: 0 0 0;
-    }
-    90% {
-      opacity: 1;
-      translate: -1px 0 0;
-    }
-    95% {
-      opacity: 0.88;
-      translate: 1px 0 0;
-    }
   }
 
   .crt-rollbar {
     height: 110px;
     contain: layout style paint;
+    will-change: translate;
     background: linear-gradient(
       to bottom var(--in-oklab),
       transparent,
@@ -145,21 +136,7 @@
 
   @keyframes crt-roll {
     0% { translate: 0 -120px 0; }
-    100% {
-      translate: 0 105vh 0;
-      translate: 0 105dvh 0;
-    }
-  }
-
-  .crt-vignette {
-    contain: strict;
-    background: radial-gradient(
-      circle at 50% 50% var(--in-oklab),
-      transparent 55%,
-      rgba(5, 5, 5, 0.56) 82%,
-      rgba(5, 5, 5, 0.95) 100%
-    );
-    box-shadow: inset 0 0 72px rgba(0, 0, 0, 0.92);
+    100% { translate: 0 105vh 0; }
   }
 
   /* ==========================================================================
@@ -190,24 +167,25 @@
     contain: layout style paint;
   }
 
-  /* 60 FPS GPU-Composited Audio Clipping Bars (scale-only transform) */
+  /* 60 FPS GPU-Composited Audio Clipping Bars (Shared Fixed-Ratio Keyframes, Zero Per-Node var() Calc in Keyframe) */
   .pcm-bar {
-    scale: 1 var(--bar-scale, 0.5);
+    scale: 1 1;
     animation: pcm-clip-bounce 1.4s steps(3, end) infinite;
-    animation-delay: var(--bar-delay, 0s);
     @media (prefers-reduced-motion: reduce) {
       animation: none;
     }
   }
 
+  .pcm-phase-a { animation-delay: 0s; }
+  .pcm-phase-b { animation-delay: -0.45s; }
+  .pcm-phase-c { animation-delay: -0.9s; }
+
   @keyframes pcm-clip-bounce {
     0%, 100% {
-      scale: 1 var(--bar-scale, 0.5);
-      opacity: 0.65;
+      scale: 1 1;
     }
     50% {
-      scale: 1 calc(var(--bar-scale, 0.5) * 0.42);
-      opacity: 0.95;
+      scale: 1 0.42;
     }
   }
 
@@ -278,9 +256,10 @@
       0 0 0 1px var(--void-black);
   }
 
-  /* Fluid clamp() typography + CSS Gradient Weathering Mask + Chromatic Aberration */
+  /* Fluid clamp() typography + Micro-Tiled CSS Mask (15px x 4px) + Zero-Readback Chromatic Slices */
   .nt-glitch-title {
     position: relative;
+    isolation: isolate;
     font-size: clamp(2.75rem, 1.4rem + 7vw, 6.8rem);
     text-shadow:
       -3px 0 var(--blood-red),
@@ -288,34 +267,33 @@
       0 2px rgba(57, 255, 20, 0.65);
 
     --weathered-scan-mask:
-      repeating-linear-gradient(
+      linear-gradient(
         0deg,
-        #000 0px,
-        #000 3px,
-        rgba(0, 0, 0, 0.65) 3px,
-        rgba(0, 0, 0, 0.65) 4px
+        #000 75%,
+        rgba(0, 0, 0, 0.65) 0
       ),
-      repeating-linear-gradient(
+      linear-gradient(
         90deg,
-        #000 0px,
-        #000 14px,
-        rgba(0, 0, 0, 0.82) 14px,
-        #000 15px
+        #000 93.33%,
+        rgba(0, 0, 0, 0.82) 0
       );
 
     -webkit-mask-image: var(--weathered-scan-mask);
+    -webkit-mask-size: 15px 4px;
     -webkit-mask-repeat: repeat;
     mask-image: var(--weathered-scan-mask);
+    mask-size: 15px 4px;
     mask-repeat: repeat;
   }
 
   @supports (not (mask-image: linear-gradient(#000, #000))) and (not (-webkit-mask-image: linear-gradient(#000, #000))) {
     .nt-glitch-title {
-      background-image: repeating-linear-gradient(
+      background-image: linear-gradient(
         0deg,
-        transparent 0 3px,
-        rgba(5, 5, 5, 0.35) 3px 4px
+        transparent 75%,
+        rgba(5, 5, 5, 0.35) 0
       );
+      background-size: 100% 4px;
     }
   }
 
@@ -325,7 +303,8 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    mix-blend-mode: screen;
+    opacity: 0.88;
+    will-change: translate;
   }
 
   .nt-glitch-title::before {
@@ -371,6 +350,7 @@
   .marquee-track {
     display: inline-block;
     translate: 0 0 0;
+    will-change: translate;
   }
 
   .marquee-fast {
@@ -401,6 +381,10 @@
      THE TARGET BUTTON ("THE TRAP / EXIT POINT")
      ========================================================================== */
 
+  .cryptic-trap-anchor {
+    contain: layout style;
+  }
+
   .cryptic-trap-button {
     /* MANDATORY identity transforms to prevent stacking-context shift on :hover */
     translate: 0px 0px 0px;
@@ -414,7 +398,7 @@
     background-color: #121212;
     color: var(--blown-white);
 
-    /* Classic brutalist X11 / Windows 98 3D bevel + blood-red outer warning frame */
+    /* Classic brutalist X11 / Windows 98 3D bevel + Hard-Offset Shadows (Zero Gaussian Blur Rasterization) */
     border-top: 2px solid #e0e0e0;
     border-left: 2px solid #e0e0e0;
     border-right: 2px solid #050505;
@@ -422,13 +406,12 @@
     outline: 2px solid var(--blood-red);
     box-shadow:
       5px 5px 0px var(--blood-red),
-      -3px -3px 0px rgba(57, 255, 20, 0.45),
-      0 0 28px rgba(216, 0, 39, 0.35);
+      -3px -3px 0px rgba(57, 255, 20, 0.45);
 
+    /* Compositor-only transform transition (zero CPU paint interpolation on background/color) */
     transition:
       scale 0.08s steps(2, end),
-      background-color 0.08s steps(2, end),
-      color 0.08s steps(2, end);
+      rotate 0.08s steps(2, end);
   }
 
   @supports (translate: 0px) {
@@ -443,12 +426,14 @@
         2px 0 rgba(0, 240, 255, 0.75);
       box-shadow:
         -5px 4px 0px var(--blood-red),
-        5px -4px 0px var(--phosphor-cyan),
-        0 0 36px rgba(57, 255, 20, 0.65);
+        5px -4px 0px var(--phosphor-cyan);
     }
 
     @media (hover: hover) and (pointer: fine) {
-      .cryptic-trap-button:hover {
+      /* Hover is bound to the stable .cryptic-trap-anchor wrapper so rotating/shaking
+         the inner button never moves the hit-test geometry out from under the cursor */
+      .cryptic-trap-anchor:hover .cryptic-trap-button {
+        will-change: translate, scale, rotate;
         scale: 1.03;
         rotate: 0deg;
         background-color: var(--blown-white);
@@ -459,20 +444,19 @@
           2px 0 rgba(0, 240, 255, 0.75);
         box-shadow:
           -5px 4px 0px var(--blood-red),
-          5px -4px 0px var(--phosphor-cyan),
-          0 0 36px rgba(57, 255, 20, 0.65);
+          5px -4px 0px var(--phosphor-cyan);
         animation: trap-hover-shake 0.45s steps(2, end) infinite;
         @media (prefers-reduced-motion: reduce) {
           animation: none;
         }
       }
 
-      .cryptic-trap-button:hover .trap-titlebar {
+      .cryptic-trap-anchor:hover .trap-titlebar {
         background-color: var(--void-black);
         color: var(--matrix-lime);
       }
 
-      .cryptic-trap-button:hover .trap-prompt-line {
+      .cryptic-trap-anchor:hover .trap-prompt-line {
         color: var(--blood-red);
       }
     }
@@ -482,7 +466,8 @@
     .cryptic-trap-button {
       transform: translate(0px, 0px) rotate(-1.4deg) scale(1);
     }
-    .cryptic-trap-button:where(:hover, :focus-visible) {
+    .cryptic-trap-anchor:hover .cryptic-trap-button,
+    .cryptic-trap-button:focus-visible {
       transform: translate(-2px, 1px) rotate(0deg) scale(1.03);
       background-color: var(--blown-white);
       color: var(--void-black);
@@ -532,6 +517,21 @@
   @keyframes slow-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.25; }
+  }
+
+  /* ==========================================================================
+     MOBILE & INTEGRATED GPU GRACEFUL SCALING (TBDR BANDWIDTH PROTECTION)
+     ========================================================================== */
+  @media (max-width: 768px), ((hover: none) and (pointer: coarse)) {
+    /* Prevent full-viewport <main> backing-texture promotion on mobile TBDR GPUs */
+    .nt-main-jitter {
+      animation: none;
+    }
+
+    /* Halve active waveform bar animations on mobile to reduce compositor draw calls */
+    .pcm-bar:nth-child(even) {
+      animation: none;
+    }
   }
 }
 
@@ -737,12 +737,16 @@
   .bg-\[\#080808\] { background-color: #080808; }
   .bg-\[\#d80027\] { background-color: #d80027; }
   .bg-\[\#d80027\]\/5 { background-color: rgba(216, 0, 39, 0.06); }
+  .bg-\[\#d80027\]\/25 { background-color: rgba(216, 0, 39, 0.25); }
   .bg-\[\#d80027\]\/60 { background-color: rgba(216, 0, 39, 0.6); }
   .bg-\[\#39ff14\] { background-color: #39ff14; }
   .bg-\[\#39ff14\]\/10 { background-color: rgba(57, 255, 20, 0.1); }
   .bg-\[\#39ff14\]\/20 { background-color: rgba(57, 255, 20, 0.2); }
+  .bg-\[\#39ff14\]\/25 { background-color: rgba(57, 255, 20, 0.25); }
   .bg-\[\#39ff14\]\/50 { background-color: rgba(57, 255, 20, 0.5); }
   .bg-\[\#e0e0e0\] { background-color: #e0e0e0; }
+  .bg-\[\#e0e0e0\]\/10 { background-color: rgba(224, 224, 224, 0.1); }
+  .bg-\[\#e0e0e0\]\/15 { background-color: rgba(224, 224, 224, 0.15); }
   .bg-\[\#e0e0e0\]\/20 { background-color: rgba(224, 224, 224, 0.2); }
   .bg-\[\#e0e0e0\]\/50 { background-color: rgba(224, 224, 224, 0.5); }
   .bg-\[\#c0c0c0\] { background-color: #c0c0c0; }

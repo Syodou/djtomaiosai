@@ -2,10 +2,16 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 export const TARGET_YOUTUBE_URL = 'https://www.youtube.com/@NT_DYWKSYCKS'
 
-// Singleton AudioContext prevents hardware context exhaustion & memory leaks
+// Singleton AudioContext + cooldown guard prevents hardware context exhaustion & hover-jitter audio spam
 let sharedAudioCtx = null
+let lastBurstTimestamp = 0
+const AUDIO_COOLDOWN_MS = 120
 
 function triggerGlitchBurstSound() {
+  const nowMs = typeof performance !== 'undefined' ? performance.now() : Date.now()
+  if (nowMs - lastBurstTimestamp < AUDIO_COOLDOWN_MS) return
+  lastBurstTimestamp = nowMs
+
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext
     if (!AudioCtx) return
@@ -70,6 +76,9 @@ function computeBoundedCoords(seed, btnWidth = 320, btnHeight = 122) {
 
 export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
   const buttonRef = useRef(null)
+  const sizeRef = useRef({ width: 320, height: 122 })
+  const rafIdRef = useRef(0)
+
   const [seed] = useState(() => ({
     rx: Math.random(),
     ry: Math.random(),
@@ -79,11 +88,10 @@ export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
   // Lazy initializer computes exact bounded coordinates on first render (zero CLS jump)
   const [coords, setCoords] = useState(() => computeBoundedCoords(seed))
 
-  const clampToViewport = useCallback(() => {
-    const el = buttonRef.current
-    const rect = el ? el.getBoundingClientRect() : { width: 320, height: 122 }
+  const updateCoordsFromCachedSize = useCallback(() => {
+    const { width, height } = sizeRef.current
     setCoords((prev) => {
-      const next = computeBoundedCoords(seed, rect.width, rect.height)
+      const next = computeBoundedCoords(seed, width, height)
       if (prev.x === next.x && prev.y === next.y && prev.tilt === next.tilt) {
         return prev
       }
@@ -91,23 +99,52 @@ export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
     })
   }, [seed])
 
+  const scheduleViewportClamp = useCallback(() => {
+    if (rafIdRef.current) return
+    rafIdRef.current = window.requestAnimationFrame(() => {
+      rafIdRef.current = 0
+      updateCoordsFromCachedSize()
+    })
+  }, [updateCoordsFromCachedSize])
+
   useEffect(() => {
-    clampToViewport()
-    window.addEventListener('resize', clampToViewport, { passive: true })
-    window.visualViewport?.addEventListener('resize', clampToViewport, { passive: true })
+    const el = buttonRef.current
+    if (el) {
+      sizeRef.current = {
+        width: el.offsetWidth || 320,
+        height: el.offsetHeight || 122,
+      }
+      updateCoordsFromCachedSize()
+    }
+
+    window.addEventListener('resize', scheduleViewportClamp, { passive: true })
+    window.visualViewport?.addEventListener('resize', scheduleViewportClamp, { passive: true })
 
     let ro = null
-    if (typeof ResizeObserver !== 'undefined' && buttonRef.current) {
-      ro = new ResizeObserver(clampToViewport)
-      ro.observe(buttonRef.current)
+    if (typeof ResizeObserver !== 'undefined' && el) {
+      ro = new ResizeObserver((entries) => {
+        const entry = entries[0]
+        if (!entry) return
+        const borderBox = entry.borderBoxSize?.[0]
+        sizeRef.current = {
+          width: borderBox ? borderBox.inlineSize : entry.contentRect.width,
+          height: borderBox ? borderBox.blockSize : entry.contentRect.height,
+        }
+        scheduleViewportClamp()
+      })
+      ro.observe(el)
     }
 
     return () => {
-      window.removeEventListener('resize', clampToViewport)
-      window.visualViewport?.removeEventListener('resize', clampToViewport)
+      window.removeEventListener('resize', scheduleViewportClamp)
+      window.visualViewport?.removeEventListener('resize', scheduleViewportClamp)
       ro?.disconnect()
+      if (rafIdRef.current) {
+        window.cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = 0
+      }
     }
-  }, [clampToViewport])
+  }, [scheduleViewportClamp, updateCoordsFromCachedSize])
 
   const handlePointerEnter = (e) => {
     if (e.pointerType === 'mouse') {
@@ -117,6 +154,7 @@ export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
 
   return (
     <div
+      onPointerEnter={handlePointerEnter}
       className="cryptic-trap-anchor absolute top-0 left-0 z-40"
       style={{
         translate: `${coords.x}px ${coords.y}px 0`,
@@ -129,7 +167,6 @@ export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
         target="_blank"
         rel="noopener noreferrer"
         onClick={triggerGlitchBurstSound}
-        onPointerEnter={handlePointerEnter}
         aria-label="External signal detected: open NT DYWKSYCKS YouTube channel in new tab"
         className="cryptic-trap-button inline-block text-left font-mono cursor-crosshair"
       >
