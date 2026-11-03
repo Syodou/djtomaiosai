@@ -1,73 +1,137 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-export const TARGET_YOUTUBE_URL = 'https://www.youtube.com/@NTDYWKSYCKS'
+export const TARGET_YOUTUBE_URL = 'https://www.youtube.com/@NT_DYWKSYCKS'
+
+// Singleton AudioContext prevents hardware context exhaustion & memory leaks
+let sharedAudioCtx = null
 
 function triggerGlitchBurstSound() {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext
     if (!AudioCtx) return
-    const ctx = new AudioCtx()
+    if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
+      sharedAudioCtx = new AudioCtx()
+    }
+    const ctx = sharedAudioCtx
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+      if (ctx.state === 'suspended') return
+    }
+
+    const now = ctx.currentTime
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
 
     osc.type = 'sawtooth'
-    osc.frequency.setValueAtTime(92, ctx.currentTime)
-    osc.frequency.exponentialRampToValueAtTime(1480, ctx.currentTime + 0.035)
-    osc.frequency.setValueAtTime(55, ctx.currentTime + 0.04)
+    osc.frequency.setValueAtTime(92, now)
+    osc.frequency.exponentialRampToValueAtTime(1480, now + 0.035)
+    osc.frequency.setValueAtTime(55, now + 0.04)
 
-    gain.gain.setValueAtTime(0.035, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.065)
+    gain.gain.setValueAtTime(0.035, now)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.065)
 
     osc.connect(gain)
     gain.connect(ctx.destination)
-    osc.start()
-    osc.stop(ctx.currentTime + 0.07)
-    osc.onended = () => ctx.close().catch(() => {})
+    osc.start(now)
+    osc.stop(now + 0.07)
+    osc.onended = () => {
+      osc.disconnect()
+      gain.disconnect()
+    }
   } catch {
     // Silent fallback if browser blocks Web Audio prior to user gesture
   }
 }
 
+const SAFE_MARGIN_X = 14
+const SAFE_MARGIN_TOP = 32
+const SAFE_MARGIN_BOTTOM = 32
+
+function computeBoundedCoords(seed, btnWidth = 320, btnHeight = 122) {
+  if (typeof window === 'undefined') {
+    return { x: 24, y: 380, tilt: -1.4 }
+  }
+  const vw = window.visualViewport?.width || window.innerWidth
+  const vh = window.visualViewport?.height || window.innerHeight
+  const isNarrow = vw < 640
+
+  const desiredLeftRatio = isNarrow ? 0.04 + seed.rx * 0.04 : 0.19 + seed.rx * 0.12
+  const desiredTopRatio = isNarrow ? 0.58 + seed.ry * 0.08 : 0.64 + seed.ry * 0.08
+
+  const maxX = Math.max(SAFE_MARGIN_X, vw - btnWidth - SAFE_MARGIN_X)
+  const maxY = Math.max(SAFE_MARGIN_TOP, vh - btnHeight - SAFE_MARGIN_BOTTOM)
+
+  return {
+    x: Math.round(Math.min(maxX, Math.max(SAFE_MARGIN_X, vw * desiredLeftRatio))),
+    y: Math.round(Math.min(maxY, Math.max(SAFE_MARGIN_TOP, vh * desiredTopRatio))),
+    tilt: seed.tilt,
+  }
+}
+
 export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
-  // Default to the signature non-standard coordinate (top: 68%, left: 23%)
-  // with subtle semi-random micro-variance calculated once on mount
-  const [coords, setCoords] = useState({ top: 68, left: 23, tilt: -1.4 })
+  const buttonRef = useRef(null)
+  const [seed] = useState(() => ({
+    rx: Math.random(),
+    ry: Math.random(),
+    tilt: Number((Math.random() * 2.8 - 1.4).toFixed(2)),
+  }))
+
+  // Lazy initializer computes exact bounded coordinates on first render (zero CLS jump)
+  const [coords, setCoords] = useState(() => computeBoundedCoords(seed))
+
+  const clampToViewport = useCallback(() => {
+    const el = buttonRef.current
+    const rect = el ? el.getBoundingClientRect() : { width: 320, height: 122 }
+    setCoords((prev) => {
+      const next = computeBoundedCoords(seed, rect.width, rect.height)
+      if (prev.x === next.x && prev.y === next.y && prev.tilt === next.tilt) {
+        return prev
+      }
+      return next
+    })
+  }, [seed])
 
   useEffect(() => {
-    const isNarrow = window.innerWidth < 640
-    const baseTop = isNarrow ? 64 : 68
-    const baseLeft = isNarrow ? 8 : 23
-    const deltaTop = (Math.random() * 8 - 4).toFixed(2)
-    const deltaLeft = (Math.random() * (isNarrow ? 6 : 12) - (isNarrow ? 2 : 4)).toFixed(2)
-    const tiltAngle = (Math.random() * 3.2 - 1.6).toFixed(2)
+    clampToViewport()
+    window.addEventListener('resize', clampToViewport, { passive: true })
+    window.visualViewport?.addEventListener('resize', clampToViewport, { passive: true })
 
-    setCoords({
-      top: Math.min(76, Math.max(54, Number(baseTop) + Number(deltaTop))),
-      left: Math.min(isNarrow ? 14 : 58, Math.max(4, Number(baseLeft) + Number(deltaLeft))),
-      tilt: Number(tiltAngle),
-    })
-  }, [])
+    let ro = null
+    if (typeof ResizeObserver !== 'undefined' && buttonRef.current) {
+      ro = new ResizeObserver(clampToViewport)
+      ro.observe(buttonRef.current)
+    }
 
-  const handlePurgeClick = () => {
-    triggerGlitchBurstSound()
-    window.open(url, '_blank', 'noopener,noreferrer')
+    return () => {
+      window.removeEventListener('resize', clampToViewport)
+      window.visualViewport?.removeEventListener('resize', clampToViewport)
+      ro?.disconnect()
+    }
+  }, [clampToViewport])
+
+  const handlePointerEnter = (e) => {
+    if (e.pointerType === 'mouse') {
+      triggerGlitchBurstSound()
+    }
   }
 
   return (
     <div
-      className="cryptic-trap-anchor absolute z-40"
+      className="cryptic-trap-anchor absolute top-0 left-0 z-40"
       style={{
-        top: `${coords.top}%`,
-        left: `${coords.left}%`,
+        translate: `${coords.x}px ${coords.y}px 0`,
         '--trap-tilt': `${coords.tilt}deg`,
       }}
     >
-      <button
-        type="button"
-        onClick={handlePurgeClick}
-        onMouseEnter={triggerGlitchBurstSound}
+      <a
+        ref={buttonRef}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={triggerGlitchBurstSound}
+        onPointerEnter={handlePointerEnter}
         aria-label="External signal detected: open NT DYWKSYCKS YouTube channel in new tab"
-        className="cryptic-trap-button group text-left font-mono cursor-crosshair focus:outline-none"
+        className="cryptic-trap-button inline-block text-left font-mono cursor-crosshair"
       >
         {/* Top X11 / Win98 Brutalist Fault Header Bar */}
         <div className="trap-titlebar flex items-center justify-between px-2 py-0.5 bg-[#d80027] text-[#050505] text-[10px] font-bold tracking-widest border-b border-[#050505]">
@@ -101,7 +165,7 @@ export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
                 [ERROR: EXTERNAL SIGNAL DETECTED - CLICK TO PURGE]
               </div>
               <div className="text-[10px] opacity-80 tracking-widest">
-                TARGET_URI :: YOUTUBE.COM/@NTDYWKSYCKS
+                TARGET_URI :: YOUTUBE.COM/@NT_DYWKSYCKS
               </div>
               <div className="trap-prompt-line pt-1 flex items-center gap-1 text-[11px] sm:text-xs font-bold text-[#39ff14]">
                 <span>&gt; [ENTER_TERMINAL_FEED]</span>
@@ -116,7 +180,7 @@ export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
           <span>PID: 0x7E_AUDIO_STREAM</span>
           <span>[EXEC: _BLANK]</span>
         </div>
-      </button>
+      </a>
     </div>
   )
 }

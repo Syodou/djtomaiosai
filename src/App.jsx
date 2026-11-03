@@ -22,7 +22,7 @@ export default function App() {
 
       {/* Central / Scattered Non-Interactive Brutalist Typography Installation */}
       <main
-        className="pointer-events-none relative z-20 w-full h-full flex flex-col justify-between p-6 sm:p-10"
+        className="nt-main-jitter pointer-events-none relative z-20 w-full h-full flex flex-col justify-between p-6 sm:p-10"
         aria-label="NT DYWKSYCKS visual installation"
       >
         {/* Upper Irregular Telemetry Header Fragment */}

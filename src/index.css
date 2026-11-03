@@ -32,6 +32,7 @@
   footer,
   h1,
   button,
+  a,
   span {
     box-sizing: border-box;
     margin: 0;
@@ -66,38 +67,34 @@
     translate: 0 0 0;
   }
 
-  /* Pure CSS 2x2 Bayer Dither Grain (replaces heavy SVG feTurbulence / Canvas) */
+  /* Pure CSS 2x2 Bayer Dither Grain (alpha-composited, zero full-screen blend readback) */
   .crt-dither-grain {
     contain: strict;
-    translate: 0 0 0;
     background: repeating-conic-gradient(
-        rgba(224, 224, 224, 0.05) 0% 25%,
+        rgba(224, 224, 224, 0.032) 0% 25%,
         transparent 0% 50%
       )
       0 / 4px 4px;
-    mix-blend-mode: overlay;
   }
 
   /* GPU-Composited Horizontal Scanlines & RGB Phosphor Subpixel Grille */
   .crt-scanlines {
     contain: strict;
-    translate: 0 0 0;
     background:
       repeating-linear-gradient(
         to bottom,
         transparent 0px,
         transparent 2px,
-        rgba(0, 0, 0, 0.62) 2px,
-        rgba(0, 0, 0, 0.62) 4px
+        rgba(0, 0, 0, 0.56) 2px,
+        rgba(0, 0, 0, 0.56) 4px
       ),
       repeating-linear-gradient(
         to right,
-        rgba(216, 0, 39, 0.055) 0px,
-        rgba(57, 255, 20, 0.055) 1px,
-        rgba(0, 240, 255, 0.055) 2px,
+        rgba(216, 0, 39, 0.045) 0px,
+        rgba(57, 255, 20, 0.045) 1px,
+        rgba(0, 240, 255, 0.045) 2px,
         transparent 3px
       );
-    mix-blend-mode: multiply;
   }
 
   /* GPU-Composited Chromatic Aberration Edge Fringe */
@@ -108,7 +105,6 @@
       inset 3px 0 0 rgba(216, 0, 39, 0.34),
       inset -3px 0 0 rgba(0, 240, 255, 0.28),
       inset 0 2px 0 rgba(57, 255, 20, 0.16);
-    mix-blend-mode: screen;
     animation: chromatic-pulse 3.6s steps(2, end) infinite;
     @media (prefers-reduced-motion: reduce) {
       animation: none;
@@ -149,7 +145,10 @@
 
   @keyframes crt-roll {
     0% { translate: 0 -120px 0; }
-    100% { translate: 0 105dvh 0; }
+    100% {
+      translate: 0 105vh 0;
+      translate: 0 105dvh 0;
+    }
   }
 
   .crt-vignette {
@@ -255,6 +254,10 @@
   .nt-viewport-shell {
     isolation: isolate;
     contain: strict;
+  }
+
+  .nt-main-jitter {
+    translate: 0 0 0;
     animation: crt-micro-jitter 4.5s steps(2, end) infinite;
     @media (prefers-reduced-motion: reduce) {
       animation: none;
@@ -405,7 +408,9 @@
     scale: 1;
     contain: layout style paint;
 
-    max-width: min(92dvw, 410px);
+    max-width: calc(100vw - 28px);
+    max-width: min(calc(100dvw - 28px), 410px);
+    text-decoration: none;
     background-color: #121212;
     color: var(--blown-white);
 
@@ -427,8 +432,7 @@
   }
 
   @supports (translate: 0px) {
-    .cryptic-trap-button:where(:hover, :focus-visible):not(:disabled) {
-      will-change: transform;
+    .cryptic-trap-button:focus-visible {
       scale: 1.03;
       rotate: 0deg;
       background-color: var(--blown-white);
@@ -441,9 +445,35 @@
         -5px 4px 0px var(--blood-red),
         5px -4px 0px var(--phosphor-cyan),
         0 0 36px rgba(57, 255, 20, 0.65);
-      animation: trap-hover-shake 0.45s steps(2, end) infinite;
-      @media (prefers-reduced-motion: reduce) {
-        animation: none;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .cryptic-trap-button:hover {
+        scale: 1.03;
+        rotate: 0deg;
+        background-color: var(--blown-white);
+        color: var(--void-black);
+        outline-color: var(--matrix-lime);
+        text-shadow:
+          -2px 0 rgba(216, 0, 39, 0.75),
+          2px 0 rgba(0, 240, 255, 0.75);
+        box-shadow:
+          -5px 4px 0px var(--blood-red),
+          5px -4px 0px var(--phosphor-cyan),
+          0 0 36px rgba(57, 255, 20, 0.65);
+        animation: trap-hover-shake 0.45s steps(2, end) infinite;
+        @media (prefers-reduced-motion: reduce) {
+          animation: none;
+        }
+      }
+
+      .cryptic-trap-button:hover .trap-titlebar {
+        background-color: var(--void-black);
+        color: var(--matrix-lime);
+      }
+
+      .cryptic-trap-button:hover .trap-prompt-line {
+        color: var(--blood-red);
       }
     }
   }
@@ -452,24 +482,23 @@
     .cryptic-trap-button {
       transform: translate(0px, 0px) rotate(-1.4deg) scale(1);
     }
-    .cryptic-trap-button:where(:hover, :focus-visible):not(:disabled) {
-      will-change: transform;
+    .cryptic-trap-button:where(:hover, :focus-visible) {
       transform: translate(-2px, 1px) rotate(0deg) scale(1.03);
       background-color: var(--blown-white);
       color: var(--void-black);
     }
   }
 
-  .cryptic-trap-button:where(:hover, :focus-visible):not(:disabled) .trap-titlebar {
+  .cryptic-trap-button:focus-visible .trap-titlebar {
     background-color: var(--void-black);
     color: var(--matrix-lime);
   }
 
-  .cryptic-trap-button:where(:hover, :focus-visible):not(:disabled) .trap-prompt-line {
+  .cryptic-trap-button:focus-visible .trap-prompt-line {
     color: var(--blood-red);
   }
 
-  .cryptic-trap-button:active:not(:disabled) {
+  .cryptic-trap-button:active {
     translate: 2px 2px 0px;
     scale: 0.99;
   }
@@ -549,6 +578,7 @@
   .inset-y-\[-14px\] { top: -14px; bottom: -14px; }
 
   .top-0 { top: 0; }
+  .left-0 { left: 0; }
   .bottom-0 { bottom: 0; }
   .top-14 { top: 3.5rem; }
   .top-28 { top: 7rem; }
