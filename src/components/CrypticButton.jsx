@@ -29,14 +29,11 @@ function triggerGlitchBurstSound() {
 }
 
 export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
-  // Default to the prompt's signature non-standard coordinate (top: 68%, left: 23%)
-  // with subtle semi-random micro-variance calculated on mount
+  // Default to the signature non-standard coordinate (top: 68%, left: 23%)
+  // with subtle semi-random micro-variance calculated once on mount
   const [coords, setCoords] = useState({ top: 68, left: 23, tilt: -1.4 })
-  const [isHovered, setIsHovered] = useState(false)
-  const [hexAddr, setHexAddr] = useState('0x0000007E')
 
   useEffect(() => {
-    // Semi-chaotic offset around top: 68%, left: 23% while staying safe on smaller viewports
     const isNarrow = window.innerWidth < 640
     const baseTop = isNarrow ? 64 : 68
     const baseLeft = isNarrow ? 8 : 23
@@ -50,18 +47,6 @@ export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
       tilt: Number(tiltAngle),
     })
   }, [])
-
-  useEffect(() => {
-    if (!isHovered) return
-    const timer = setInterval(() => {
-      const randHex = Math.floor(Math.random() * 0xffffffff)
-        .toString(16)
-        .toUpperCase()
-        .padStart(8, '0')
-      setHexAddr(`0x${randHex}`)
-    }, 90)
-    return () => clearInterval(timer)
-  }, [isHovered])
 
   const handlePurgeClick = () => {
     triggerGlitchBurstSound()
@@ -80,14 +65,7 @@ export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
       <button
         type="button"
         onClick={handlePurgeClick}
-        onMouseEnter={() => {
-          setIsHovered(true)
-          triggerGlitchBurstSound()
-        }}
-        onMouseLeave={() => {
-          setIsHovered(false)
-          setHexAddr('0x0000007E')
-        }}
+        onMouseEnter={triggerGlitchBurstSound}
         aria-label="External signal detected: open NT DYWKSYCKS YouTube channel in new tab"
         className="cryptic-trap-button group text-left font-mono cursor-crosshair focus:outline-none"
       >
@@ -95,7 +73,7 @@ export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
         <div className="trap-titlebar flex items-center justify-between px-2 py-0.5 bg-[#d80027] text-[#050505] text-[10px] font-bold tracking-widest border-b border-[#050505]">
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-2 h-2 bg-[#050505]" />
-            <span>SYS_FAULT // {hexAddr}</span>
+            <span>SYS_FAULT // 0x0000007E</span>
           </span>
           <span className="px-1 bg-[#c0c0c0] text-[#050505] border border-[#050505] leading-none">
             [X]
@@ -116,7 +94,10 @@ export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
             </div>
 
             <div className="space-y-1">
-              <div className="text-[11px] sm:text-xs font-bold tracking-wider uppercase leading-snug">
+              <div
+                className="trap-glitch-headline text-[11px] sm:text-xs font-bold tracking-wider uppercase leading-snug"
+                data-text="[ERROR: EXTERNAL SIGNAL DETECTED - CLICK TO PURGE]"
+              >
                 [ERROR: EXTERNAL SIGNAL DETECTED - CLICK TO PURGE]
               </div>
               <div className="text-[10px] opacity-80 tracking-widest">
@@ -139,4 +120,3 @@ export default function CrypticButton({ url = TARGET_YOUTUBE_URL }) {
     </div>
   )
 }
-

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import CrtOverlay from './components/CrtOverlay.jsx'
 import BackgroundNoise from './components/BackgroundNoise.jsx'
 import CrypticButton from './components/CrypticButton.jsx'
@@ -12,27 +12,12 @@ const FRAGMENTED_TRACK_SLOGANS = [
 ]
 
 export default function App() {
-  const [frameHex, setFrameHex] = useState('0x007E9A1C')
-  const [bufferLoad, setBufferLoad] = useState(98.4)
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      const nextHex = Math.floor(Math.random() * 0xffffffff)
-        .toString(16)
-        .toUpperCase()
-        .padStart(8, '0')
-      setFrameHex(`0x${nextHex}`)
-      setBufferLoad(Number((94 + Math.random() * 5.9).toFixed(1)))
-    }, 460)
-    return () => clearInterval(id)
-  }, [])
-
   return (
     <div className="nt-viewport-shell w-screen h-screen overflow-hidden relative select-none bg-[#080808] text-[#e0e0e0]">
-      {/* CRT Scanlines, Vignette & Weathering Overlay */}
+      {/* Pure CSS + GPU-Composited Scanlines, Chromatic Fringe & Bezel Overlay */}
       <CrtOverlay />
 
-      {/* Multi-Layered ASCII, Kanji, Wireframe & System Error Background */}
+      {/* Pure DOM + Tailwind Multi-Layered ASCII, Kanji, Wireframe & System Error Background */}
       <BackgroundNoise />
 
       {/* Central / Scattered Non-Interactive Brutalist Typography Installation */}
@@ -42,17 +27,17 @@ export default function App() {
       >
         {/* Upper Irregular Telemetry Header Fragment */}
         <header className="flex flex-wrap items-start justify-between gap-4 pt-4">
-          <div className="bg-[#050505]/90 border border-[#e0e0e0]/25 px-3 py-2 font-mono text-[10px] sm:text-xs tracking-[0.25em] uppercase">
+          <div className="telemetry-box bg-[#050505]/90 border border-[#e0e0e0]/25 px-3 py-2 font-mono text-[10px] sm:text-xs tracking-[0.25em] uppercase">
             <div className="text-[#d80027] font-bold flex items-center gap-2">
-              <span className="inline-block w-2 h-2 bg-[#d80027]" />
+              <span className="inline-block w-2 h-2 bg-[#d80027] animate-pulse" />
               <span>NODE_ID :: NT_DYWKSYCKS // VOID_INSTALLATION</span>
             </div>
             <div className="text-[#e0e0e0]/70 mt-0.5">
-              MEM_OFFSET: {frameHex} // DSP_CLIP: {bufferLoad}%
+              MEM_OFFSET: 0x007E9A1C // DSP_CLIP: +19.8dBFS [60FPS_GPU_COMPOSITED]
             </div>
           </div>
 
-          <div className="hidden sm:block bg-[#050505]/90 border border-[#39ff14]/40 px-3 py-1.5 font-mono text-[10px] text-[#39ff14] tracking-[0.3em] uppercase">
+          <div className="hidden sm:block telemetry-box bg-[#050505]/90 border border-[#39ff14]/40 px-3 py-1.5 font-mono text-[10px] text-[#39ff14] tracking-[0.3em] uppercase">
             [NO_PORTFOLIO // NO_COMMERCE // PURE_SIGNAL_DECAY]
           </div>
         </header>
@@ -67,7 +52,7 @@ export default function App() {
               <span className="text-[#39ff14]">[240-320 BPM // HARDCORE_NOISE]</span>
             </div>
 
-            {/* Glitching Main Title */}
+            {/* Glitching Main Title with GPU Chromatic Aberration Pseudo-Layers */}
             <h1
               className="nt-glitch-title font-pixel uppercase text-[#e0e0e0] tracking-[0.16em] sm:tracking-[0.22em] leading-[0.92] select-none"
               data-text="NT DYWKSYCKS"
